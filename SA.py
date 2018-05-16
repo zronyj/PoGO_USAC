@@ -1,8 +1,9 @@
-import csv, math, random
+import csv, math, random, sys
 from matplotlib import pyplot as plt
 
-# Pedir nombre de documento con coordenadas
-nombre = raw_input("Ingrese el nombre del documento con las coordenadas: ")
+# Usamos el nombre del documento dado por el usuario en la linea de comando
+ingreso = sys.argv
+nombre = ingreso[1]
 
 # Abrir y leer documento
 with open(nombre, "r") as doc:
@@ -13,29 +14,23 @@ with open(nombre, "r") as doc:
 coordenadas = map(lambda x: [float(i) for i in x[:-1]], datos[1:])
 vdatos = zip(*coordenadas)
 
-# Sacar minimos, maximos y diferencias de coordenadas en X y Y
-lon_min, lon_max = min(vdatos[0]), max(vdatos[0])
-lat_min, lat_max = min(vdatos[1]), max(vdatos[1])
-lon_delta = lon_max - lon_min
+# Sacar minimos, maximos y diferencias de coordenadas en Y y X
+lat_min, lat_max = min(vdatos[0]), max(vdatos[0])
+lon_min, lon_max = min(vdatos[1]), max(vdatos[1])
 lat_delta = lat_max - lat_min
+lon_delta = lon_max - lon_min
 
 # Normalizar los datos
 datos = map(lambda x: [(x[0] - lon_min)/lon_delta, (x[1] - lat_min)/lat_delta], coordenadas)
 
-# Construir matriz de distancias PLANAS
+# Construir matriz de distancias (en kilometros)
 ciudades = len(datos)
 distancias = [[0.0] * ciudades for i in range(ciudades)]
 for j in range(ciudades):
 	for k in range(ciudades):
-		distancias[j][k] = ( (datos[j][0] - datos[k][0])**2 + (datos[j][1] - datos[k][1])**2 )**0.5
-
-# Construir matriz de distancias ESFERICAS
-arcos = [[0.0] * ciudades for i in range(ciudades)]
-for j in range(ciudades):
-	for k in range(ciudades):
-		y = abs(coordenadas[j][0] - coordenadas[k][0]) * 110547
-		x = abs(coordenadas[j][1] - coordenadas[k][1]) * 111320 * math.cos( math.radians( coordenadas[j][0] - coordenadas[k][0] ) )
-		arcos[j][k] = ( x**2 + y**2 )**0.5
+		y = abs(coordenadas[j][0] - coordenadas[k][0]) * 110.547
+		x = abs(coordenadas[j][1] - coordenadas[k][1]) * 111.320 * math.cos( math.radians( coordenadas[j][0] - coordenadas[k][0] ) )
+		distancias[j][k] = ( x**2 + y**2 )**0.5
 
 # Calcular la distancia del recorrido
 def recorrido(secuencia, dist_mat):
@@ -99,7 +94,6 @@ def ver_ruta(ruta, datos, distancia, imagen="ruta_"):
 	plt.plot(tabla[1], tabla[0], "bo-")
 	plt.savefig(imagen + str(distancia) + ".png")
 
-rta, dis = enfriamiento_simulado(datos, 200, 500000, recorrido)
-caminar = recorrido(rta, arcos)
-print("Distancia minima hallada: " + str(caminar) + " metros")
+rta, dis = enfriamiento_simulado(datos, 200, 1000000, recorrido)
+print("Distancia minima hallada: " + str(dis) + " km")
 ver_ruta(rta, datos, dis)
